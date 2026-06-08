@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Life-En · 生活英文目錄</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F7F5F0;
+  --surface: #FFFFFF;
+  --ink: #1A1916;
+  --ink2: #5C5A55;
+  --ink3: #9A9890;
+  --accent: #2D6A4F;
+  --accent-light: #EAF3EC;
+  --border: rgba(26,25,22,0.1);
+  --border-hover: rgba(26,25,22,0.22);
+  --radius: 14px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'DM Sans', 'Noto Sans TC', sans-serif;
+  min-height: 100vh;
+}
+
+/* NAV */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(247,245,240,0.88);
+  backdrop-filter: blur(12px);
+  border-bottom: 0.5px solid var(--border);
+  padding: 0 2rem;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 56px;
+}
+.nav-logo {
+  font-family: 'DM Serif Display', serif;
+  font-size: 20px;
+  color: var(--ink);
+  text-decoration: none;
+  letter-spacing: 0.01em;
+}
+.nav-logo span { color: var(--accent); }
+.nav-meta { font-size: 13px; color: var(--ink3); }
+
+/* HERO */
+.hero {
+  padding: 5rem 2rem 3.5rem;
+  max-width: 860px;
+  margin: 0 auto;
+}
+.hero-tag {
+  display: inline-block;
+  background: var(--accent-light);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 5px 14px;
+  border-radius: 99px;
+  margin-bottom: 1.25rem;
+}
+.hero h1 {
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(2.4rem, 5vw, 3.6rem);
+  font-weight: 400;
+  line-height: 1.15;
+  color: var(--ink);
+  margin-bottom: 1rem;
+}
+.hero h1 em {
+  font-style: italic;
+  color: var(--accent);
+}
+.hero-desc {
+  font-size: 16px;
+  color: var(--ink2);
+  line-height: 1.75;
+  max-width: 520px;
+}
+.hero-stats {
+  display: flex;
+  gap: 2rem;
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 0.5px solid var(--border);
+}
+.stat-num { font-size: 24px; font-weight: 500; color: var(--ink); }
+.stat-label { font-size: 12px; color: var(--ink3); margin-top: 2px; }
+
+/* GRID */
+.section-label {
+  max-width: 860px;
+  margin: 0 auto 1.25rem;
+  padding: 0 2rem;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink3);
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 0 2rem 5rem;
+}
+.card {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.4rem;
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: border-color 0.18s, transform 0.18s, box-shadow 0.18s;
+  animation: fadeUp 0.4s both;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(26,25,22,0.07);
+}
+.card-icon {
+  font-size: 26px;
+  width: 46px; height: 46px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg);
+  border-radius: 10px;
+  flex-shrink: 0;
+  transition: transform 0.18s;
+}
+.card:hover .card-icon { transform: scale(1.08); }
+.card-body { flex: 1; min-width: 0; }
+.card-name {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink);
+  line-height: 1.4;
+  margin-bottom: 3px;
+}
+.card-count {
+  font-size: 12px;
+  color: var(--ink3);
+}
+.card-arrow {
+  font-size: 16px;
+  color: var(--border-hover);
+  flex-shrink: 0;
+  transition: transform 0.18s, color 0.18s;
+}
+.card:hover .card-arrow { transform: translateX(3px); color: var(--accent); }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.card:nth-child(1)  { animation-delay: 0.03s; }
+.card:nth-child(2)  { animation-delay: 0.06s; }
+.card:nth-child(3)  { animation-delay: 0.09s; }
+.card:nth-child(4)  { animation-delay: 0.12s; }
+.card:nth-child(5)  { animation-delay: 0.15s; }
+.card:nth-child(6)  { animation-delay: 0.18s; }
+.card:nth-child(7)  { animation-delay: 0.21s; }
+.card:nth-child(8)  { animation-delay: 0.24s; }
+.card:nth-child(9)  { animation-delay: 0.27s; }
+.card:nth-child(10) { animation-delay: 0.30s; }
+.card:nth-child(11) { animation-delay: 0.33s; }
+.card:nth-child(12) { animation-delay: 0.36s; }
+.card:nth-child(13) { animation-delay: 0.39s; }
+.card:nth-child(14) { animation-delay: 0.42s; }
+
+footer {
+  border-top: 0.5px solid var(--border);
+  padding: 1.5rem 2rem;
+  text-align: center;
+  font-size: 12px;
+  color: var(--ink3);
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="index.html">Life<span>-En</span></a>
+  <span class="nav-meta">生活英文學習</span>
+</nav>
+
+<div class="hero">
+  <div class="hero-tag">Topic Directory</div>
+  <h1>Learn English<br><em>in real life.</em></h1>
+  <p class="hero-desc">從日常生活情境出發，用最自然的方式學習道地英文。選擇你感興趣的主題，開始學習。</p>
+  <div class="hero-stats">
+    <div>
+      <div class="stat-num">291</div>
+      <div class="stat-label">篇對話</div>
+    </div>
+    <div>
+      <div class="stat-num">14</div>
+      <div class="stat-label">個主題</div>
+    </div>
+    <div>
+      <div class="stat-num">A1–B2</div>
+      <div class="stat-label">難度分級</div>
+    </div>
+  </div>
+</div>
+
+<div class="section-label">所有主題</div>
+
+<div class="grid">
+
+  <a class="card" href="#">
+    <div class="card-icon">💼</div>
+    <div class="card-body">
+      <div class="card-name">職場與辦公室</div>
+      <div class="card-count">46 篇</div>
+    </div>
+    <div class="card-arrow">›</div>
+  </a>
+
+  <a class="card" href="#">
+    <div class="card-icon">🍽</div>
+    <div class="card-body">
+      <div class="card-name">餐飲與飲食</div>
+      <div class="card-count">27 篇</div>
+    </div>
+    <div class="card-arrow">›</div>
+  </a>
+
+  <a class="card" href="#">
+    <div class="card-icon">🛍</div>
+    <div class="card-body">
+      <div class="card-name">購物與消費</div>
+      <div class="card-count">21 篇</div>
+    </div>
+    <div class="card-arrow">›</div>
+  </a>
+
+  <a class="card" href="#">
+    <div class="card-icon">✈</div>
+    <div class="card-body">
+      <div class="card-name">旅行與交通</div>
+      <div class="card-count">12 篇</div>
+    </div>
+    <div class="card-arrow">›</div>
+  </a>
+
+  <a class="card" href="home-living.html">
+    <div class="card-icon">🏠</div>
+    <div class="card-body">
+      <div class="card-name">家居與生活</div>
+      <div class="card-count">19 篇</div>
+    </div>
+    <div class="card-arrow">›</div>
+  </a>
+
+  <a class="card" href="#">
+    <div class="card-icon">🏥</div>
+    <div class="card-body">
+      <div class="card-name">健康與醫療</div>
+      <div class="card-count">17 篇</div>
+    </div>
+    <div class="card-arrow">›</div>
+  </a>
+
+  <a class="card" href="#">
+    <div class="card-icon">💰</div>
+    <div class="card-body">
+      <div class="card-name">金融與理財</div>
+      <div class="card-count">10 篇</div>
+    </div>
+    <div class="card-arrow">›</div>
+  </a>
+
+  <a class="card" href="#">
+    <div class="card-icon">❤</div>
+    <div class="card-body">
+      <div class="card-name">愛情、婚姻與家庭</div>
+      <div class="card-count">31 篇</div>
+    </div>
+    <div class="card-arrow">›</div>
+  </a>
+
+  <a class="card" href="#">
+    <div class="card-icon">💬</div>
+    <div class="card-body">
+      <div class="card-name">社交與日常對話</div>
+      <div class="card-count">29 篇</div>
+    </div>
+    <div class="card-arrow">›</div>
+  </a>
+
+  <a class="card" href="#">
+    <div class="card-icon">⚽</div>
+    <div class="card-body">
+      <div class="card-name">運動、休閒與戶外活動</div>
+      <div class="card-count">25 篇</div>
+    </div>
+    <div class="card-arrow">›</div>
+  </a>
+
+  <a class="card" href="#">
+    <div class="card-icon">🎬</div>
+    <div class="card-body">
+      <div class="card-name">娛樂與流行文化</div>
+      <div class="card-count">29 篇</div>
+    </div>
+    <div class="card-arrow">›</div>
+  </a>
+
+  <a class="card" href="#">
+    <div class="card-icon">🎄</div>
+    <div class="card-body">
+      <div class="card-name">節慶與假日</div>
+      <div class="card-count">9 篇</div>
+    </div>
+    <div class="card-arrow">›</div>
+  </a>
+
+  <a class="card" href="#">
+    <div class="card-icon">📚</div>
+    <div class="card-body">
+      <div class="card-name">教育與學習</div>
+      <div class="card-count">6 篇</div>
+    </div>
+    <div class="card-arrow">›</div>
+  </a>
+
+  <a class="card" href="#">
+    <div class="card-icon">🗣</div>
+    <div class="card-body">
+      <div class="card-name">通訊與服務</div>
+      <div class="card-count">10 篇</div>
+    </div>
+    <div class="card-arrow">›</div>
+  </a>
+
+</div>
+
+<footer>Life-En &nbsp;·&nbsp; 生活英文學習計畫</footer>
+
+</body>
+</html>
