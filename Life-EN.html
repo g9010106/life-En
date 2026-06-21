@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Life EN 生活英文跟讀</title>
+<style>
+  :root {
+    --bg: #0f172a; --card: #1e293b; --card2: #263249;
+    --accent: #38bdf8; --accent2: #818cf8;
+    --green: #34d399; --red: #f87171; --yellow: #fbbf24;
+    --text: #f1f5f9; --muted: #94a3b8; --border: #334155;
+    --radius: 14px; --hdr: 54px; --btm: 88px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: 'Segoe UI', Arial, sans-serif;
+    display: flex; flex-direction: column;
+    height: 100dvh; overflow: hidden;
+  }
+
+  /* ── Header (sticky top) ── */
+  .header {
+    flex-shrink: 0; height: var(--hdr);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 16px; background: var(--card);
+    border-bottom: 1px solid var(--border); z-index: 100;
+  }
+  .header-title { font-size: 16px; font-weight: 700; color: var(--accent); }
+  .header-sub   { font-size: 10px; color: var(--muted); margin-top: 1px; }
+  .header-right { display: flex; gap: 8px; align-items: center; }
+  .icon-btn { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 20px; padding: 4px 6px; border-radius: 8px; }
+
+  /* ── Scrollable content ── */
+  .scroll-area {
+    flex: 1; overflow-y: auto; overflow-x: hidden;
+    padding: 12px 14px 10px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .scroll-area::-webkit-scrollbar { width: 3px; }
+  .scroll-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* Sentence counter */
+  .sentence-counter { text-align: center; font-size: 12px; color: var(--muted); }
+
+  /* ── Sentence card ── */
+  .sentence-card {
+    background: var(--card); border-radius: var(--radius);
+    padding: 18px 16px 14px; position: relative;
+  }
+  .sentence-num  { font-size: 10px; color: var(--muted); margin-bottom: 6px; }
+  .sentence-vocab { font-size: 11px; color: var(--yellow); line-height: 1.7; margin-bottom: 10px; }
+  .sentence-vocab span { background: rgba(251,191,36,.15); border-radius: 4px; padding: 1px 5px; margin: 2px; display: inline-block; }
+  .sentence-en  { font-size: 21px; font-weight: 600; line-height: 1.75; color: var(--text); }
+  .sentence-zh  { font-size: 13px; color: var(--muted); margin-top: 10px; line-height: 1.65; display: none; }
+  .sentence-zh.show { display: block; }
+
+  /* 單字標記 */
+  .w { display: inline; border-radius: 3px; transition: background .1s, color .1s; }
+  /* 群組單字：黃色粗體大字 */
+  .w.vocab { color: var(--yellow); font-weight: 800; font-size: 1.12em; }
+  /* 目前正在念的字：亮藍底 */
+  .w.speaking { background: rgba(56,189,248,.55); color: #fff; border-radius: 4px; padding: 0 3px; font-weight: 800; }
+  /* 群組字又正在念：亮黃底 */
+  .w.vocab.speaking { background: rgba(251,191,36,.3); color: var(--yellow); }
+  .speak-hint   { text-align: center; margin-top: 12px; font-size: 13px; color: var(--accent); animation: pulse 1.8s infinite; }
+  @keyframes pulse { 0%,100%{opacity:.4} 50%{opacity:1} }
+
+  /* ── Countdown strip (below sentence, NOT overlay) ── */
+  .countdown-strip {
+    display: none; background: rgba(52,211,153,.08);
+    border: 1px solid var(--green); border-radius: var(--radius);
+    padding: 10px 14px; gap: 10px; align-items: center;
+  }
+  .countdown-strip.active { display: flex; }
+  .cd-icon  { font-size: 20px; flex-shrink: 0; }
+  .cd-body  { flex: 1; }
+  .cd-label { font-size: 12px; color: var(--green); font-weight: 600; margin-bottom: 5px; }
+  .cd-bar   { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .cd-fill  { height: 100%; background: var(--green); border-radius: 3px; transition: width .9s linear; }
+  .cd-num   { font-size: 22px; font-weight: 800; color: var(--green); flex-shrink: 0; min-width: 36px; text-align: center; }
+  .cd-skip  { flex-shrink: 0; padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border); background: var(--card2); color: var(--muted); font-size: 12px; cursor: pointer; }
+
+  /* ── Controls ── */
+  .controls-card { background: var(--card); border-radius: var(--radius); padding: 14px; }
+  .ctrl-row  { display: flex; align-items: center; justify-content: center; gap: 14px; margin-bottom: 10px; }
+  .ctrl-btn  { background: var(--card2); border: none; color: var(--text); border-radius: 50%; width: 44px; height: 44px; font-size: 17px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .ctrl-btn.primary { background: var(--accent); color: #0f172a; width: 54px; height: 54px; font-size: 20px; }
+  .speed-row { display: flex; gap: 6px; justify-content: center; }
+  .speed-btn { background: var(--card2); border: 1px solid var(--border); color: var(--muted); padding: 4px 10px; border-radius: 8px; font-size: 12px; cursor: pointer; }
+  .speed-btn.active { border-color: var(--accent); color: var(--accent); }
+  .jump-row { display:flex; align-items:center; justify-content:center; gap:8px; margin-top:10px; }
+  .jump-label { font-size:12px; color:var(--muted); }
+  .jump-input { width:52px; padding:4px 6px; border-radius:8px; border:1px solid var(--border); background:var(--card2); color:var(--accent); font-size:14px; font-weight:700; text-align:center; outline:none; -moz-appearance:textfield; }
+  .jump-input::-webkit-outer-spin-button,.jump-input::-webkit-inner-spin-button { -webkit-appearance:none; }
+  .jump-input:focus { border-color:var(--accent); }
+  .jump-go { padding:4px 14px; border-radius:8px; border:none; background:var(--accent); color:#0f172a; font-size:12px; font-weight:700; cursor:pointer; }
+
+  /* ── Recording ── */
+  .rec-card  { background: var(--card); border-radius: var(--radius); padding: 12px 14px; }
+  .rec-title { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+  .rec-row   { display: flex; gap: 8px; }
+  .rec-btn   { flex: 1; padding: 8px; border-radius: 10px; border: none; font-size: 13px; cursor: pointer; }
+  .rec-btn.start { background: var(--red); color: white; }
+  .rec-btn.start.recording { animation: blink .8s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.5} }
+  .rec-btn.play  { background: var(--card2); color: var(--text); border: 1px solid var(--border); }
+
+  /* ── Options ── */
+  .options-card { background: var(--card); border-radius: var(--radius); padding: 12px 14px; }
+  .options-row  { display: flex; gap: 8px; }
+  .opt-btn { flex: 1; padding: 8px 4px; border-radius: 10px; border: 1px solid var(--border); background: var(--card2); color: var(--muted); font-size: 11px; cursor: pointer; text-align: center; transition: all .15s; }
+  .opt-btn.on { border-color: var(--green); color: var(--green); background: rgba(52,211,153,.1); }
+  .opt-btn.mastered-btn.on { border-color: var(--yellow); color: var(--yellow); background: rgba(251,191,36,.1); }
+
+  /* ── Pause slider ── */
+  .pause-panel { background: var(--card); border-radius: var(--radius); padding: 12px 14px; display: none; }
+  .pause-panel.show { display: block; }
+  .pause-label { font-size: 12px; color: var(--accent); margin-bottom: 8px; }
+  .pause-slider-row { display: flex; align-items: center; gap: 10px; }
+  .pause-slider { flex: 1; -webkit-appearance: none; height: 4px; border-radius: 2px; background: var(--border); outline: none; }
+  .pause-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: var(--green); cursor: pointer; }
+  .pause-val { font-size: 15px; font-weight: 700; color: var(--green); min-width: 36px; text-align: right; }
+
+  /* ── Bottom bar (sticky bottom) ── */
+  .bottom-bar {
+    flex-shrink: 0; background: var(--card);
+    border-top: 1px solid var(--border); z-index: 100;
+  }
+  .progress-bar  { height: 3px; background: var(--border); }
+  .progress-fill { height: 100%; background: var(--accent); transition: width .3s; }
+  .progress-text { text-align: center; font-size: 11px; color: var(--muted); padding: 4px 0; }
+  .module-bar    { padding: 8px 12px; display: flex; gap: 8px; overflow-x: auto; }
+  .module-bar::-webkit-scrollbar { display: none; }
+  .mod-btn { flex-shrink: 0; padding: 5px 14px; border-radius: 20px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-size: 13px; cursor: pointer; transition: all .15s; }
+  .mod-btn.active { background: var(--accent); color: #0f172a; border-color: var(--accent); font-weight: 700; }
+
+  /* ── Landscape responsive ── */
+  @media (orientation: landscape) and (max-height: 500px) {
+    :root { --hdr: 44px; }
+    .scroll-area {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto;
+      gap: 8px;
+      align-items: start;
+    }
+    .sentence-counter { grid-column: 1; }
+    .sentence-card    { grid-column: 1; grid-row: 2 / 6; }
+    .countdown-strip  { grid-column: 1; }
+    .controls-card    { grid-column: 2; grid-row: 1 / 3; }
+    .rec-card         { grid-column: 2; }
+    .options-card     { grid-column: 2; }
+    .pause-panel      { grid-column: 2; }
+    .sentence-en { font-size: 16px; }
+    .sentence-zh { font-size: 12px; }
+    .ctrl-btn    { width: 38px; height: 38px; font-size: 15px; }
+    .ctrl-btn.primary { width: 46px; height: 46px; font-size: 18px; }
+    .bottom-bar  { display: flex; align-items: center; }
+    .progress-bar { width: 100px; height: 4px; border-radius: 2px; flex-shrink: 0; }
+    .progress-text { font-size: 11px; padding: 0 8px; white-space: nowrap; }
+    .module-bar  { flex: 1; padding: 4px 8px; }
+  }
+
+  /* ── Modal ── */
+  .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 200; align-items: flex-end; justify-content: center; }
+  .modal.open { display: flex; }
+  .modal-box { background: var(--card); border-radius: 18px 18px 0 0; padding: 22px 18px; width: 100%; max-width: 480px; }
+  .modal-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+  .modal-desc  { font-size: 12px; color: var(--muted); margin-bottom: 14px; line-height: 1.6; }
+  .modal-btn   { display: block; width: 100%; padding: 12px; border-radius: 10px; border: 1px dashed var(--accent); background: rgba(56,189,248,.07); color: var(--accent); font-size: 14px; cursor: pointer; margin-bottom: 10px; }
+  .modal-cancel { display: block; width: 100%; padding: 11px; border-radius: 10px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-size: 13px; cursor: pointer; }
+  #fileInput { display: none; }
+</style>
+</head>
+<body>
+
+<!-- Header (sticky top) -->
+<div class="header">
+  <div>
+    <div class="header-title">🌍 Life EN 生活英文</div>
+    <div class="header-sub">跟讀 Shadowing Practice</div>
+  </div>
+  <div class="header-right">
+    <button class="icon-btn" id="toggleZhBtn" title="顯示/隱藏中文">👁</button>
+    <button class="icon-btn" id="uploadBtn" title="上傳 Excel 更新句子">📂</button>
+  </div>
+</div>
+
+<!-- Scrollable content -->
+<div class="scroll-area">
+
+  <!-- Sentence counter -->
+  <div class="sentence-counter" id="sentenceCounter">01 / 70</div>
+
+  <!-- Sentence card (no overlay) -->
+  <div class="sentence-card" id="sentenceCard">
+    <div class="sentence-num" id="sentenceNum">01</div>
+    <div class="sentence-vocab" id="vocabArea"></div>
+    <div class="sentence-en" id="sentenceEn">點選 ▶ 開始跟讀！</div>
+    <div class="sentence-zh" id="sentenceZh"></div>
+    <div class="speak-hint" id="speakHint" style="display:none">🔊 Speak Now！大聲跟讀！</div>
+  </div>
+
+  <!-- Countdown strip (BELOW card, visible while reading) -->
+  <div class="countdown-strip" id="shadowCountdown">
+    <div class="cd-icon">🎙</div>
+    <div class="cd-body">
+      <div class="cd-label">跟讀時間！大聲念出來！</div>
+      <div class="cd-bar"><div class="cd-fill" id="cdFill" style="width:100%"></div></div>
+    </div>
+    <div class="cd-num" id="countdownNum">15</div>
+    <button class="cd-skip" id="countdownSkip">跳過→</button>
+  </div>
+
+  <!-- Playback controls -->
+  <div class="controls-card">
+    <div class="ctrl-row">
+      <button class="ctrl-btn" id="prevBtn">⏮</button>
+      <button class="ctrl-btn primary" id="playBtn">▶</button>
+      <button class="ctrl-btn" id="nextBtn">⏭</button>
+      <button class="ctrl-btn" id="replayBtn">↺</button>
+    </div>
+    <div class="speed-row">
+      <button class="speed-btn" data-speed="0.75">0.75x</button>
+      <button class="speed-btn active" data-speed="1.0">1.0x</button>
+      <button class="speed-btn" data-speed="1.25">1.25x</button>
+      <button class="speed-btn" data-speed="1.5">1.5x</button>
+    </div>
+    <div class="jump-row">
+      <span class="jump-label">跳到第</span>
+      <input type="number" class="jump-input" id="jumpInput" value="1" min="1" inputmode="numeric">
+      <span class="jump-label">句</span>
+      <button class="jump-go" id="jumpGoBtn">GO ▶</button>
+    </div>
+  </div>
+
+  <!-- Debug bar -->
+  <div id="kDebug" style="text-align:center;font-size:11px;color:#94a3b8;margin-top:6px;min-height:14px;"></div>
+
+  <!-- Recording -->
+  <div class="rec-card">
+    <div class="rec-title">🎙 錄音自我比對 (Shadowing Recording)</div>
+    <div class="rec-row">
+      <button class="rec-btn start" id="recBtn">● 開始錄音</button>
+      <button class="rec-btn play" id="recPlayBtn">▶ 播放錄音</button>
+    </div>
+  </div>
+
+  <!-- Options -->
+  <div class="options-card">
+    <div class="options-row">
+      <button class="opt-btn" id="autoNextBtn">⟳ 自動<br>播下一句</button>
+      <button class="opt-btn" id="loopBtn">↺ 單句<br>循環</button>
+      <button class="opt-btn" id="shadowModeBtn">🎙 跟讀<br>模式</button>
+      <button class="opt-btn mastered-btn" id="masteredBtn">☆ 標記為<br>「已熟練」</button>
+    </div>
+  </div>
+
+  <!-- Pause slider (shows when shadow mode ON) -->
+  <div class="pause-panel" id="pausePanel">
+    <div class="pause-label">⏱ 跟讀模式：播完後停幾秒？</div>
+    <div class="pause-slider-row">
+      <input type="range" class="pause-slider" id="pauseSlider" min="1" max="30" value="4">
+      <div class="pause-val"><span id="pauseVal">4</span>秒</div>
+    </div>
+    <div class="pause-label" style="margin-top:12px;">🎵 卡拉OK高亮速度（Chrome用）</div>
+    <div class="pause-slider-row">
+      <input type="range" class="pause-slider" id="karaokeSlider" min="50" max="150" value="100" step="5">
+      <div class="pause-val"><span id="karaokeVal">100</span>%</div>
+    </div>
+  </div>
+
+</div><!-- /scroll-area -->
+
+<!-- Bottom bar (module + progress, sticky bottom) -->
+<div class="bottom-bar">
+  <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+  <div class="progress-text" id="progressText">已完成 0 / 0 句</div>
+  <div class="module-bar" id="moduleBar">
+    <button class="mod-btn active" data-module="ALL">全部</button>
+  </div>
+</div>
+
+<!-- Upload modal -->
+<div class="modal" id="uploadModal">
+  <div class="modal-box">
+    <div class="modal-title">📂 上傳 Excel 更新句子</div>
+    <div class="modal-desc">
+      選取 <strong>Excel 句庫檔案</strong>，系統會自動讀取欄位：<br>
+      A（音檔名稱）・B（模組）・C（英文）・D（中文）<br>
+      <span style="color:var(--accent2)">可選擇性加 E 欄（單字群組）</span>
+    </div>
+    <label class="modal-btn" for="fileInput">選擇 Excel 檔案</label>
+    <input type="file" id="fileInput" accept=".xlsx,.xls">
+    <button class="modal-cancel" id="modalCancel">取消</button>
+  </div>
+</div>
+
+<!-- SheetJS for Excel parsing -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+// ─────────────────────────────────────────────
+// DATA  (V3000-A2 預設句庫)
+// ─────────────────────────────────────────────
+const DEFAULT_SENTENCES = [
+  {id:'V3000-A2-001',module:'V3000-A2',vocab:'abroad | airline | accommodation | opportunity | adventure',en:"Hey, I'm finally going abroad next month! I booked tickets through a budget airline and found affordable accommodation near the city centre. It's a huge opportunity to see the world and try something new. Honestly, the whole trip feels like one big adventure!",zh:'嘿，我下個月終於要出國了！我訂了廉價航空的機票，也找到了市中心附近平價的住宿。這是個大好機會可以看看世界、嘗試新事物。說真的，整趟旅程感覺就是一場大冒險！'},
+  {id:'V3000-A2-002',module:'V3000-A2',vocab:'according to | exhausted | arrive | schedule | arrangement',en:"According to the app, our train arrives at 9 PM, but I'm already exhausted from waiting. I checked the schedule earlier and there might be a delay. Good thing we made our accommodation arrangements in advance, so there's no rush.",zh:'根據APP顯示，我們的火車晚上九點到，但我等到現在已經累壞了。我之前查過時刻表，好像會誤點。還好我們之前就把住宿都安排好了，所以也不用趕。'},
+  {id:'V3000-A2-003',module:'V3000-A2',vocab:"experience | communicate | communication | cultural | international",en:"Working abroad has been such an amazing experience. I've learned to communicate better in English and understand cultural differences I never expected. Good communication is key in an international environment. I'm so glad I took this opportunity!",zh:"在海外工作真的是很棒的經歷。我學會了用更好的方式用英文溝通，也了解了很多意想不到的文化差異。在國際環境裡，良好的溝通是關鍵。我很慶幸自己把握了這個機會！"},
+  {id:'V3000-A2-004',module:'V3000-A2',vocab:'advertise | advertisement | advertising | advantage | achieve',en:"Our team decided to advertise the new service on social media. The advertisement got thousands of views in just one day! Online advertising really gives us a huge advantage over competitors. If we keep this up, we'll definitely achieve our sales target this month.",zh:'我們團隊決定在社群媒體上宣傳這項新服務。廣告在一天之內就獲得了數千次瀏覽！網路廣告確實給我們帶來了很大的競爭優勢。如果繼續維持這個勢頭，我們這個月的業績目標一定達得到。'},
+  {id:'V3000-A2-005',module:'V3000-A2',vocab:'accident | ankle | dentist | ill | illness',en:"I had a bit of an accident yesterday — I fell and hurt my ankle. It's quite swollen, so I might see the dentist too to check if I knocked my tooth. I've been feeling ill all day. These small injuries and illnesses always happen at the worst time!",zh:'我昨天發生了一點小意外——我跌倒然後傷到腳踝。腫得蠻嚴重的，我可能也要順便去看個牙醫，因為牙齒好像也撞到了。我整天都覺得不舒服。這種小傷小病偏偏就在最不湊巧的時候發生！'},
+  {id:'V3000-A2-006',module:'V3000-A2',vocab:'flu | medical | medicine | patient | recover',en:'I caught the flu last week and felt terrible for a few days. The doctor gave me some medicine and told me to rest. I tried to be patient and not rush back to work. Thankfully, I started to recover by the weekend and felt much better.',zh:'我上週得了流感，整個人難受了好幾天。醫生開了些藥，叫我好好休息。我盡量保持耐心，沒有急著回去上班。感謝老天，到了週末我開始慢慢康復，整個人好多了。'},
+  {id:'V3000-A2-007',module:'V3000-A2',vocab:"diet | fitness | mental | prevent | affect",en:"I've been focusing on both my diet and fitness lately. I cut out junk food and started exercising three times a week. Taking care of my mental health is important too — stress can really affect how you feel every day. A healthy lifestyle helps prevent a lot of common health problems.",zh:'我最近同時在注重飲食和體能訓練。我戒掉了垃圾食物，每週運動三次。照顧好心理健康也很重要——壓力真的會影響你每天的狀態。健康的生活方式可以預防很多常見的健康問題。'},
+  {id:'V3000-A2-008',module:'V3000-A2',vocab:'beef | bean | beer | alcohol | biscuit',en:'We went to a nice restaurant last night. I had the beef steak with a side of beans, and it was delicious. My friend ordered a beer, but I skipped the alcohol and had sparkling water. We finished with some biscuits and coffee — the perfect end to the meal!',zh:'我們昨晚去了一家不錯的餐廳。我點了牛排配豆子，超好吃。我朋友點了啤酒，但我不喝酒，改點氣泡水。最後吃了餅乾配咖啡收尾——完美的一餐！'},
+  {id:'V3000-A2-009',module:'V3000-A2',vocab:"celebrate | cream | afford | bit",en:"Let's celebrate! We finally got the big order. I'll get a cake with cream on top — nothing too fancy, just something we can afford. A little bit of celebration goes a long way. We should celebrate every win, big or small!",zh:'我們來慶祝一下吧！大訂單終於拿到了。我來準備一個上面有奶油的蛋糕——不用太豪華，選個負擔得起的就好。小小地慶祝一下，意義很大。不管大小勝利，都應該好好慶祝！'},
+  {id:'V3000-A2-010',module:'V3000-A2',vocab:'carrot | alcoholic | boil | fresh | taste',en:"I cooked a big pot of vegetable soup today with carrots, potatoes, and fresh herbs. I boiled everything together for about thirty minutes. I'm not a big fan of alcoholic drinks, so I had fresh lemonade on the side. The taste was amazing — honestly one of my best meals this month!",zh:'今天我煮了一大鍋蔬菜湯，放了胡蘿蔔、馬鈴薯和新鮮香草。我把所有食材一起燉了大約三十分鐘。我不太愛喝酒，所以配了新鮮檸檬水。味道超讚——真的是這個月做得最好的一道料理！'},
+  {id:'V3000-A2-011',module:'V3000-A2',vocab:'material | equipment | device | instrument | engineer',en:'We toured the factory yesterday and it was impressive. The engineer showed us the new equipment they installed last month. Each device is connected to a monitoring system, and they use precision instruments to check quality. The raw material goes in one end and a finished product comes out the other!',zh:'我們昨天參觀了工廠，真的很厲害。工程師帶我們看了上個月剛安裝的新設備。每台裝置都連接到監控系統，他們還用精密儀器進行品質檢測。原料從一端進去，成品就從另一端出來！'},
+  {id:'V3000-A2-012',module:'V3000-A2',vocab:"engineering | element | structure | electronic | electric",en:"My cousin works in engineering and he loves it. He explained that every element of the machine's structure has to be carefully designed. The electronic sensors monitor everything in real time, and the whole line runs on electric power. It sounds complicated, but he makes it sound easy!",zh:"我表哥從事工程工作，他非常熱愛這份職業。他解釋說，機器結構中的每一個要素都必須精心設計。電子感應器即時監控一切，整條產線都靠電力驅動。聽起來很複雜，但他說得好像很簡單！"},
+  {id:'V3000-A2-013',module:'V3000-A2',vocab:"electricity | electrical | plastic | metal | rubber",en:"At the factory, they use a lot of electricity to run the production line. All the electrical wiring has to meet strict safety standards. The products are a mix of metal, plastic, and rubber parts — each one carefully made and tested. It's amazing how much goes into making everyday items!",zh:"工廠使用大量的電力來運作生產線。所有的電氣配線都必須符合嚴格的安全標準。產品是由金屬、塑膠和橡膠零件組合而成——每一個都經過仔細製造和測試。真的很難想像日常用品背後要花這麼多工夫！"},
+  {id:'V3000-A2-014',module:'V3000-A2',vocab:'compete | competition | ad | campaign | achieve',en:'Our team launched a new marketing campaign last week to compete with our biggest rivals. We ran an ad on social media and got thousands of clicks in just two days. The competition is tough, but we believe we can achieve our target if we stay focused.',zh:'我們上週推出了新的行銷活動，要跟最大的競爭對手一較高下。我們在社群媒體上投了廣告，短短兩天就獲得了數千次點擊。雖然競爭很激烈，但我們相信只要保持專注，就一定能達成目標。'},
+  {id:'V3000-A2-015',module:'V3000-A2',vocab:"recommend | response | respond | rate | afford",en:"A client asked me to recommend a shipping option that's fast and affordable. I responded quickly with two options and explained the rate for each. Luckily, they could afford the mid-range option. Getting a positive response from clients always makes my day!",zh:'一位客戶請我推薦快速又實惠的運輸方式。我很快就回覆了，列出兩個選項並分別說明費率。還好他們可以負擔中等價位的方案。收到客戶的正面回應總是讓我心情很好！'},
+  {id:'V3000-A2-016',module:'V3000-A2',vocab:'target | strategy | account | achieve | achievement',en:'Our team sat down to review our sales performance last month. We hit our target but need a stronger strategy for the next quarter. Managing each client account well is key to long-term success. Our biggest achievement this year was landing a major international client!',zh:'我們團隊上個月坐下來檢討銷售表現。我們達到了目標，但下一季需要更有力的策略。用心經營每一個客戶關係，是長期成功的關鍵。我們今年最大的成就，就是拿下了一個重要的國際客戶！'},
+  {id:'V3000-A2-017',module:'V3000-A2',vocab:"environment | environmental | pollution | recycle | forest",en:"I've been trying to do more for the environment lately. I started recycling everything — paper, plastic, glass. Air pollution is a real problem in the city, so I try to take the bus instead of driving. Spending time in the forest on weekends really reminds me why it's all worth protecting.",zh:"我最近一直在做一些對環境友善的事。我開始回收所有東西——紙、塑膠、玻璃——現在已經變成習慣了。城市裡的空氣汙染真的很嚴重，所以我盡量搭公車代替開車。週末去森林走走，真的會提醒我為什麼這一切都值得守護。"},
+  {id:'V3000-A2-018',module:'V3000-A2',vocab:'countryside | landscape | wild | valley | coast',en:'Last weekend we drove out to the countryside to get away from the city. The landscape was stunning — green valleys, rolling hills, and a beautiful wild coastline. We saw some wild birds and even a fox near the valley path. I wish I could live somewhere like that!',zh:'上週末我們開車去郊外，遠離城市喧囂。景色美極了——翠綠的山谷、起伏的山丘，還有壯麗的野外海岸線。我們看到了一些野鳥，還有一隻狐狸在山谷小徑旁！真希望能住在那樣的地方。'},
+  {id:'V3000-A2-019',module:'V3000-A2',vocab:"survey | survive | nature | amount | among",en:"I read a survey that said a growing amount of people want to live closer to nature. It makes sense — being among trees and open spaces is so calming. We really need to make sure future generations can still survive in a healthy world. Taking care of nature is everyone's responsibility.",zh:"我看到一份調查說，越來越多的人希望住得更靠近大自然。這很有道理——身處在樹木和開放空間之間真的很療癒。我們真的需要確保下一代仍然能在健康的世界中生活。照顧大自然是每個人的責任。"},
+  {id:'V3000-A2-020',module:'V3000-A2',vocab:"community | celebrate | attractive | audience | social",en:"Our community organised a street festival last Saturday to celebrate the neighbourhood's anniversary. The audience loved the live music — it was such an attractive event with great food and lights. It's moments like these that remind me how important social connections truly are.",zh:'我們社區上週六舉辦了一場街頭嘉年華，慶祝社區成立周年。現場觀眾超愛那些現場音樂——整個活動布置得很漂亮，食物和燈光都超棒。這樣的時刻提醒了我，社交連結有多重要。'},
+  {id:'V3000-A2-021',module:'V3000-A2',vocab:"relationship | relative | lifestyle | couple | society",en:"I had lunch with a relative I hadn't seen in years — so nice to catch up. We talked about how our lifestyles have changed a lot since we were young. She's been in a relationship with a lovely partner for about three years now. It's funny how society and family life evolve over time.",zh:"我去跟好幾年沒見的親戚吃了頓午飯——真的很開心能敘舊。我們聊到自己的生活方式從年輕到現在改變了多少。她現在和一個很好的伴侶在一起，大約三年了。整個社會和家庭生活都在慢慢演變，真是有趣。"},
+  {id:'V3000-A2-022',module:'V3000-A2',vocab:"shy | familiar | audience | fan | golf",en:"I went to a small comedy show last night — my first time, so I felt a bit shy. But the venue was familiar from a friend's recommendation. The audience was super warm and everyone laughed a lot. Turns out, the comedian is a big fan of golf and told some hilarious stories about it!",zh:'我昨晚去看了一場小型喜劇表演——第一次去，一開始有點害羞。但因為朋友推薦過這個場地，感覺還蠻熟悉的，讓我放鬆許多。觀眾氣氛超好，大家笑聲不斷。後來才知道那個喜劇演員是高爾夫球的超級粉絲，講了幾個很好笑的故事！'},
+  {id:'V3000-A2-023',module:'V3000-A2',vocab:'arrange | print | copy | printer | report',en:'I had a busy morning at the office! First, I had to arrange all the documents for the presentation. Then the printer broke down right when I needed to print the report. I had to copy everything by hand and email a digital version instead. Crisis managed!',zh:'我今天早上在辦公室很忙！首先要把所有簡報文件整理好，結果偏偏在我要印報告的時候，印表機掛點了。我只好把東西手動抄寫，然後用電子郵件傳送電子版。還好順利解決了！'},
+  {id:'V3000-A2-024',module:'V3000-A2',vocab:'laptop | repair | fix | spare | hold',en:"My laptop crashed right in the middle of an important call — terrible timing! A colleague lent me her spare laptop while I waited for the IT guy to come and fix it. He said the hard drive needed repair and it would take a day. I had to hold my patience and work on paper in the meantime!",zh:'我的筆電在重要通話進行到一半的時候當機了——時機超差！一位同事把她的備用筆電借給我用，同時我等IT人員來修。他說硬碟壞了，要花一天的時間維修。我只好忍住不耐煩，先用紙本作業！'},
+  {id:'V3000-A2-025',module:'V3000-A2',vocab:'printing | even | formal | form | column',en:"I spent the morning preparing formal documents for the client presentation. The printing came out perfectly — clean and professional. I asked my colleague to double-check every column in the report for errors. She didn't even find one mistake — which was a huge relief!",zh:'我今天早上在準備客戶簡報的正式文件。印刷出來的效果超棒——乾淨又專業。我請同事幫忙確認報告裡每一欄有沒有錯誤，她連一個錯都沒發現——真的讓我鬆了好大一口氣！'},
+  {id:'V3000-A2-026',module:'V3000-A2',vocab:"camping | sailing | insect | adventure | abroad",en:"Last summer, I went on the most amazing adventure abroad. We tried camping in the jungle — it was beautiful but there were so many insects at night! We also tried sailing along the coast for a day. Honestly, it was the most exciting trip I've ever taken.",zh:'去年夏天我去了一趟超棒的海外冒險旅行。我們在叢林裡露營——風景很美，但晚上蟲子超級多！我們也沿著海岸線帆船玩了一天。說真的，那是我這輩子最刺激的一趟旅行。'},
+  {id:'V3000-A2-027',module:'V3000-A2',vocab:'skiing | hockey | soccer | rugby | baseball',en:"My family loves sports! My brother plays rugby every weekend, my sister is obsessed with soccer, and my dad watches baseball on TV every night. I tried skiing last winter and absolutely loved it. We even went to see a hockey game together — it was such a fun day out!",zh:'我們家每個人都愛運動！我哥每個週末打橄欖球，我妹超迷足球，我爸每晚都在電視前看棒球。我去年冬天嘗試了滑雪，超喜歡的。我們上個月還一起去看了一場曲棍球比賽——好玩到不行！'},
+  {id:'V3000-A2-028',module:'V3000-A2',vocab:"jazz | album | cartoon | classic",en:"On our last night in the city, we found a tiny jazz bar playing live music. The atmosphere was incredible — like stepping into a classic movie scene. My friend bought a vinyl album of the band's music as a souvenir. We even spotted a cartoon mural on the wall on our way home — perfect end to a perfect trip!",zh:'在城市的最後一晚，我們找到了一家小爵士酒吧有現場演奏。氣氛超棒——就像走進了一部經典電影的場景。我朋友買了一張樂團的黑膠唱片當紀念品。回程路上還看到牆上有一幅卡通壁畫——完美的結局，完美的旅程！'},
+  {id:'V3000-A2-029',module:'V3000-A2',vocab:'smartphone | app | tablet | digital | screen',en:"I downloaded a new app on my smartphone to help me study English every day. I use my tablet at home for reading and watching videos. Everything is so digital now — even our office meetings are online! But I do try to take breaks away from the screen to rest my eyes.",zh:'我在智慧型手機上下載了一個新APP，幫助我每天學英文。我在家用平板電腦看書和影片。現在一切都數位化了——連公司會議都在線上開！但我盡量定時讓眼睛離開螢幕休息一下。'},
+  {id:'V3000-A2-030',module:'V3000-A2',vocab:"article | episode | classical | pronounce | phrase",en:"I've been trying to improve my English with a podcast. Each episode has a short article to read along with. My favourite part is learning how to properly pronounce new words. I always write down useful phrases — like a classical student using every tool available!",zh:'我一直在用一個podcast學英文。每一集都有一篇短文可以搭配閱讀。我最喜歡的部分是學怎麼正確發音新單字。我會把好用的片語都記下來——就像一個古典學生善用所有工具一樣！'},
+  {id:'V3000-A2-031',module:'V3000-A2',vocab:"programme | project | global | network | evidence",en:"I'm taking part in a company training programme focused on global communication skills. Our main project is to build a network of overseas clients using digital tools. There's solid evidence that companies who invest in this see better results. It's a lot of work, but totally worth it!",zh:'我正在參加一個公司的訓練計畫，專注於全球溝通技巧。我們的主要專案是利用數位工具建立海外客戶人脈網絡。有確實的研究數據顯示，投資在這方面的公司績效更好。工作量很大，但完全值得！'},
+  {id:'V3000-A2-032',module:'V3000-A2',vocab:'government | law | prison | prisoner | citizen',en:'We had a really interesting class discussion about government and law today. Our teacher asked whether every citizen should be required to vote. Someone mentioned that breaking certain laws can lead to prison. It really made me think about how laws shape the society we live in every day.',zh:'今天我們在課堂上討論了一個很有趣的議題，關於政府和法律。老師問說，是否每位公民都應該被要求強制投票。有人提到違反某些法律可能會導致坐牢。這讓我開始思考法律如何形塑我們每天生活的社會。'},
+  {id:'V3000-A2-033',module:'V3000-A2',vocab:'army | civil | criminal | crime | war',en:'I watched a documentary about how civil society changes during a war. The army played a huge role in protecting citizens, but crime also increased during that period. It showed how ordinary people managed to stay strong. It was a powerful reminder of how fragile peace can be.',zh:'我昨晚看了一部紀錄片，關於公民社會在戰爭中如何改變。軍隊在保護公民方面扮演了重要角色，但那段時期犯罪率也隨之升高。紀錄片展示了普通人如何撐過那段歲月、保持堅強。這讓我想起和平是多麼脆弱。'},
+  {id:'V3000-A2-034',module:'V3000-A2',vocab:"population | public | ordinary | award | independent",en:"A local artist in our neighbourhood just won a public award for her work. She's a pretty ordinary person — no fancy background — but her paintings are stunning. With a growing population of young creatives in the city, independent artists like her are becoming more visible. So inspiring!",zh:'我們社區有一位本地藝術家剛獲得了一個公共藝術獎。她是個很普通的人——沒有特別的背景——但她的畫作真的很驚人。這座城市的年輕創作者人口越來越多，像她這樣獨立的藝術家也越來越被看見。真的好勵志！'},
+  {id:'V3000-A2-035',module:'V3000-A2',vocab:'compare | cash | credit | purchase | discount',en:"I spent the morning comparing prices for a new phone online. I finally found one with a great discount at a local shop. I wanted to pay cash, but ended up using my credit card since it came with purchase protection. It feels good to make a smart purchase!",zh:'我今天早上在網路上到處比較新手機的價格。終於在一家本地店找到了有大折扣的型號。我本來想付現金，但最後刷了信用卡，因為有購物保障。做了一個聰明的購物決定，感覺很好！'},
+  {id:'V3000-A2-036',module:'V3000-A2',vocab:"average | deal | benefit | salary | afford",en:"I got a job offer with a really good salary and great benefits. The average pay in my field is lower, so it felt like an amazing deal. One of the best benefits is extra annual leave — that's something I really value. I think I can finally afford to move to a bigger apartment!",zh:'我收到了一份薪水很好、福利也很棒的工作邀約。我這個領域的平均薪資比較低，所以感覺像是撿到了超值好交易。最棒的福利之一是額外的年假——這對我來說真的很有價值。我想我終於可以負擔得起搬去更大的公寓了！'},
+  {id:'V3000-A2-037',module:'V3000-A2',vocab:'cost | due | pattern | record | raise',en:"I checked the company records and noticed a pattern — costs always rise in the third quarter. I prepared a report for the manager showing the trend. She appreciated it and said she'd raise the issue with the finance team. It's always smart to track patterns before things become a bigger problem.",zh:'我查看了公司的記錄，發現了一個規律——成本在第三季總是會上升。我準備了一份報告給主管，顯示這個趨勢。她很感謝，說她會跟財務部門提出這個問題。在問題變大之前，提早追蹤規律永遠是聰明之舉。'},
+  {id:'V3000-A2-038',module:'V3000-A2',vocab:"brilliant | cheerful | attitude | behaviour | behave",en:"My new colleague is absolutely brilliant — she picks up everything so fast. She's also incredibly cheerful and always has a positive attitude, which makes the whole office feel better. Her behaviour is professional without being stiff. I hope I can behave as well under pressure as she does!",zh:'我的新同事真的超厲害——什麼事情她一下子就上手了。她也超開朗，永遠保持正向的態度，讓整個辦公室氣氛都好很多。她的行為表現專業卻不死板。希望我在壓力下也能像她一樣表現得好！'},
+  {id:'V3000-A2-039',module:'V3000-A2',vocab:"impatient | aged | adult | senior | patient",en:"My grandfather is quite aged now but still incredibly sharp. He's the most senior member of our family in every sense! I tend to get impatient when things move slowly, but he always tells me to be patient. He's a real adult in every way — calm, wise, and never in a hurry.",zh:'我阿公現在年紀大了，但還是非常敏銳。他在家族中是最資深的人，無論從哪個角度來看！我做事情遇到拖延就容易沒耐心，但他總是叫我要有耐心。他是個真正成熟的大人——冷靜、有智慧，從不急躁。'},
+  {id:'V3000-A2-040',module:'V3000-A2',vocab:"appearance | active | independent | normal | ordinary",en:"My friend has a very simple, ordinary appearance but she's anything but normal! She's super active — yoga in the morning, running in the evening. She's also incredibly independent — she travels solo every year and manages everything herself. I really admire how she lives life on her own terms.",zh:'我朋友外表看起來很普通、很平凡，但她一點都不「正常」！她超活躍——早上練瑜伽，晚上慢跑。她也超獨立——每年一個人去旅行，什麼都自己搞定。我真的很佩服她活出自己的那種方式。'},
+  {id:'V3000-A2-041',module:'V3000-A2',vocab:'situation | solve | solution | error | exact',en:'We had a difficult situation at work today — a machine error stopped the whole production line. We had to solve the problem quickly to avoid delays. Luckily, the engineer found the exact cause and came up with a simple solution within an hour. Crisis handled!',zh:'我們今天工作遇到了棘手的狀況——機器出錯導致整條生產線停擺。我們必須迅速解決問題，避免延誤。還好工程師找到了確切的原因，在一小時內想出了一個簡單的解決方案。危機解除！'},
+  {id:'V3000-A2-042',module:'V3000-A2',vocab:"data | research | experiment | expert | method",en:"I've been doing some research on improving our delivery process. I looked at all the data from the past year and ran a small experiment with a new method. I'm not an expert, but the results look promising! I'll present my findings to the team next week.",zh:'我一直在做一些關於改善配送流程的研究。我查閱了過去一年的所有數據，用一個新方法做了小規模的實驗。我不是專家，但結果看起來很有希望！我下週會把發現向團隊報告。'},
+  {id:'V3000-A2-043',module:'V3000-A2',vocab:'select | option | decision | avoid | achieve',en:'We had to make a big decision today about which supplier to select. We looked at every option carefully — price, quality, and speed. To avoid making a rushed choice, we took an extra day to review the data. In the end, I think we made the right call to achieve the best outcome.',zh:'今天我們必須做一個重要的決定，要選擇哪一家供應商。我們仔細評估了每一個選項——價格、品質和速度。為了避免倉促做決定，我們多花了一天時間重新審視數據。最後我認為，我們做了正確的選擇，達到了最好的結果。'},
+  {id:'V3000-A2-044',module:'V3000-A2',vocab:"nervous | worried | crazy | scared | scary",en:"I had a job interview yesterday and I was so nervous the night before. I kept worrying about everything — what to wear, what to say. My friend said I was crazy to stress that much, but I couldn't help it! Looking back, the interviewer was friendly and not scary at all. I think it went well!",zh:'我昨天有個工作面試，前一天晚上我緊張得要命。我一直擔心很多事——要穿什麼、要說什麼。我朋友說我擔心得有點瘋狂，但我控制不了自己！回頭想想，面試官其實很友善，一點也不可怕。我覺得表現還不錯！'},
+  {id:'V3000-A2-045',module:'V3000-A2',vocab:'stress | serious | disappointed | disappointing | scene',en:"Last week was full of stress — one serious problem after another at work. The most disappointing part was when a big order got delayed with no explanation. I tried not to make a scene about it, but it was genuinely disappointing. My manager handled it well though, which helped ease the pressure.",zh:'上週壓力超大——工作上一個接一個出嚴重問題。最讓人失望的是，一筆大訂單莫名其妙地延誤了，也沒有任何說明。我努力忍著沒有發飆，但真的很讓人失望。還好主管處理得很好，讓我放鬆了不少。'},
+  {id:'V3000-A2-046',module:'V3000-A2',vocab:'mood | wild | enormous | rough | flat',en:"I was in a really good mood this morning — until the commute! The road was so rough after the rain, and then there was an enormous traffic jam. By the time I arrived, I felt quite flat. But a wild, energetic team meeting quickly lifted my spirits again. Mood saved!",zh:'今天早上我心情超好——直到上班通勤開始！路面在下雨後變得超崎嶇，然後還遇到超巨大的塞車。到公司的時候，整個人都沒什麼精神。但一場充滿活力的團隊會議很快就讓我振作起來了。心情得救！'},
+  {id:'V3000-A2-047',module:'V3000-A2',vocab:'youth | zero | worth | yard | awful',en:"I was telling a colleague about my youth and how different life was back then. The technology was basically zero compared to now! But those days were worth a lot — simple and real. The traffic today was awful though — I sat in the yard outside the office eating lunch just to get some fresh air.",zh:'我跟同事聊起我年輕時的生活，感嘆那時候跟現在有多不同。那時候科技幾乎等於零，跟現在比根本天差地別！但那段日子非常值得回味——簡單而真實。今天的交通很糟，我在辦公室外面的庭院吃午飯，好好透透氣。'},
+  {id:'V3000-A2-048',module:'V3000-A2',vocab:"junior | twin | toy | typical | user",en:"On a typical morning, I get to work early and check in with my junior colleagues. Yesterday, a user emailed about a problem with the software, and we resolved it together. My twin sister called in the afternoon — she's also in business and we trade stories all the time. Just a normal, busy day!",zh:'我每天早上都會提早到公司，和初級同事確認工作狀況。昨天有一個用戶來信反映軟體問題，我們一起解決了。下午我雙胞胎姐姐打來找我，她也在做生意，我們常常互相交流心得。就是個普通又忙碌的一天！'},
+  {id:'V3000-A2-049',module:'V3000-A2',vocab:"worse | worst | wow | used to | wildlife",en:"Wow — I just got back from a national park trip and it was breathtaking! I used to think nature walks were boring, but seeing wildlife up close changed my mind completely. The weather got worse on the last day, which was the worst timing. But the experience overall? Simply unforgettable!",zh:'哇——我剛從國家公園旅行回來，景色太美了！我以前覺得爬山健行很無聊，但近距離看到野生動物讓我完全改觀。最後一天天氣變更差，時機真的很糟糕。但整體的體驗呢？根本難以忘懷！'},
+  {id:'V3000-A2-050',module:'V3000-A2',vocab:"ago | alarm | since | during | everyday",en:"I set my alarm last night for six AM but woke up five minutes before it went off — that happens a lot! During breakfast, I was thinking about how different life was a few years ago. Since I changed my everyday routine, I've felt so much more productive. Funny how small habits make such a big difference.",zh:'我昨晚設定了早上六點的鬧鐘，但在響之前五分鐘就自己醒了——這種情況常常發生！吃早餐的時候，我在想自己幾年前的生活有多不一樣。自從我改變了每天的作息之後，效率高多了。奇怪，小習慣真的會帶來很大的改變。'},
+  {id:'V3000-A2-051',module:'V3000-A2',vocab:'instruction | instructor | teaching | training | education',en:"We started new staff training this week. The instructor was clear, friendly, and made every instruction easy to follow. Good teaching really does make a difference — I felt confident after just one day. I believe education and training should never stop, no matter how experienced you are.",zh:'我們這週開始了新員工培訓。教練很親切清楚，每一條說明都講得很好懂。好的教學真的有差——我第一天就感到很有自信。我相信無論多有經驗，教育和培訓都不應該停止。'},
+  {id:'V3000-A2-052',module:'V3000-A2',vocab:"exactly | disaster | effect | double | distance",en:"This morning's traffic was exactly what I feared — a total disaster. There was an accident on the main road, and the effect on my schedule was severe. I had to double my commute time and ended up late. I might start working from home on days when the distance just isn't worth the stress!",zh:'今天早上的塞車正是我最害怕的那種——完全是場災難。主要道路上發生了一起事故，對我的行程造成了嚴重的影響。我的通勤時間直接翻倍，到公司的時候已經遲到了。搞不好我應該開始在通勤距離太遠的那幾天在家辦公！'},
+  {id:'V3000-A2-053',module:'V3000-A2',vocab:'smell | skin | chest | bone | brain',en:"I woke up this morning and the smell of breakfast from downstairs was amazing. After eating, I went for a jog — it really gets your brain going for the day. I did fall once and landed on my chest, but luckily didn't break a bone! The fresh air was good for my skin too.",zh:'我今天早上醒來，樓下傳來的早餐香味超棒。吃完早餐之後去慢跑——真的可以讓大腦啟動、準備好迎接新的一天。我跌倒了一次，整個人撲到胸口，但還好沒有骨折！在外面活動，皮膚也感受到了新鮮空氣的好處。'},
+  {id:'V3000-A2-054',module:'V3000-A2',vocab:"coat | clothing | belt | cap | brush",en:"I was packing for a short trip and couldn't decide what clothing to bring. I threw in a light coat just in case, a belt for the formal dinner, and my favourite cap for daytime walks. I almost forgot my brush — that would've been a disaster! Packing light is an art I'm still learning.",zh:'我在打包出門旅行的行李，不知道該帶什麼衣物。我塞了一件薄外套以防萬一、一條皮帶搭配正式晚宴，還有我最愛的鴨舌帽方便白天出門。我差點忘了帶梳子——那就真的慘了！輕便打包還真是一門藝術，我還在學。'},
+  {id:'V3000-A2-055',module:'V3000-A2',vocab:'van | lorry | parking | corner | route',en:'I was driving the company van to deliver some goods this morning. A lorry was double-parked and blocking the main route, so I had to take a different road. I turned at the wrong corner and ended up in a no-parking zone! Luckily I sorted it out and made the delivery on time — just barely.',zh:'今天早上我開著公司的貨車去送貨。有一台大卡車停在雙黃線上，擋住了主要路線，我只好繞路。在錯的轉角轉彎，結果誤入禁止停車的區域！還好順利解決，按時送到貨——差一點點而已。'},
+  {id:'V3000-A2-056',module:'V3000-A2',vocab:'gold | hill | grass | ground | sky',en:'We went on a picnic up on the hill behind our neighbourhood. The grass was soft and the sky was completely clear and blue. I lay on the ground and just stared up — it felt like pure gold. Days like that remind me how much I love being out in nature.',zh:'我們去社區後面的山丘上野餐。草地柔軟，天空完全澄藍清透。我躺在地上仰望天空——感覺就像純金一樣珍貴。這樣的日子提醒我，我有多喜歡大自然。'},
+  {id:'V3000-A2-057',module:'V3000-A2',vocab:'monkey | moon | ocean | earthquake | hole',en:"Last weekend we drove down to the coast and spent the day by the ocean. At night, the moon was full and lit everything up beautifully. On the way back, we spotted a couple of wild monkeys by the road! The next morning, I woke up to news of a small earthquake — there was even a hole in the wall from a fallen picture frame. Quite the weekend!",zh:'上週末我們開車到海邊，在海洋旁邊度過了一整天。晚上，滿月把一切都照得亮亮的，美極了。回程途中，我們在路旁看到了幾隻野生猴子！第二天早上，新聞報導了一場小地震——客廳牆上的畫框掉下來還在牆上留了個洞。真是精彩的週末！'},
+  {id:'V3000-A2-058',module:'V3000-A2',vocab:'wood | wooden | wool | fur | cotton',en:"I went shopping for some home things last week. I found a lovely wooden shelf made from reclaimed wood — very eco-friendly. For clothes, I bought a soft wool scarf and a cotton T-shirt. My cat kept rubbing her fur on the scarf the moment I got home — I think she approved!",zh:'我上週去逛街買了一些家用品。我找到一個用回收木材做的漂亮木製書架——非常環保。衣服方面，我買了一條柔軟的羊毛圍巾和一件棉質T恤。我剛到家，我的貓就一直把她的毛蹭在圍巾上——我想她很滿意！'},
+  {id:'V3000-A2-059',module:'V3000-A2',vocab:"furniture | fridge | cupboard | frame | iron",en:"I moved into a new apartment last month and spent the first weekend buying furniture. I found a great fridge and a tall cupboard for the kitchen. The bed frame I ordered arrived damaged, which was annoying. But once everything was set up — and I'd ironed all my clothes — it finally started to feel like home!",zh:"我上個月搬進了新公寓，第一個週末就花時間去買家具。我找到了一台很棒的冰箱和一個高大的廚房櫃子。訂的床架送來的時候發現有損壞，讓我很不高興。但等一切都擺好了，衣服也全部燙完之後，終於開始有家的感覺了！"},
+  {id:'V3000-A2-060',module:'V3000-A2',vocab:"mail | stamp | lock | lamp | gate",en:"I got home and found a pile of mail at the gate — mostly bills and one parcel. I needed a stamp to reply to a formal letter. I turned on the lamp by the door since it was getting dark. Then I realised I'd forgotten to lock the front gate — lucky nothing happened!",zh:"我回到家，發現大門口有一堆信件——大部分是帳單，還有一個包裹。我需要一張郵票回覆一封正式信件。因為天色漸暗，我把門口的燈打開。然後才發現我忘記把前院大門鎖上——還好什麼事都沒發生！"},
+  {id:'V3000-A2-061',module:'V3000-A2',vocab:'battery | mobile | signal | sign | item',en:"My mobile ran out of battery in the middle of a call — so embarrassing. I found a sign on the wall near the elevator that said charging station on floor 2. The signal up there was much better too. I checked every item on my to-do list while I waited for my phone to charge — very productive!",zh:'我的手機在打電話的過程中沒電了——超糗的。我在電梯旁邊的牆上看到一個牌子說二樓有充電站。那裡的訊號也比較好。等手機充電的時候，我把待辦清單上的每一件事都確認了一遍——非常有效率！'},
+  {id:'V3000-A2-062',module:'V3000-A2',vocab:'underground | motorcycle | vehicle | port | path',en:"I tried taking the underground for the first time today — much faster than driving! On the way home, I saw a motorcycle delivery guy on the path near the river. Our office is not far from the port, so we sometimes see huge vehicles transporting cargo along the main road. City life is never boring!",zh:'我今天第一次搭地鐵——比開車快多了！回程路上，我看到一個機車外送員在河邊步道旁邊騎車。我們辦公室離港口不遠，所以有時候可以看到大型車輛沿著主要幹道運送貨物。城市生活真的從不無聊！'},
+  {id:'V3000-A2-063',module:'V3000-A2',vocab:"architect | architecture | indoor | indoors | roof",en:"I visited a famous architect's exhibition downtown last weekend. The architecture of the building itself was stunning — huge glass walls and a curved roof. We spent most of the time indoors looking at models and drawings. There was even a beautiful indoor garden on the second floor — absolutely breathtaking.",zh:'上週末我去市區看了一位知名建築師的作品展。那棟建築本身的設計就超美——巨大的玻璃帷幕牆和弧形的屋頂。我們大部分時間都待在室內，欣賞建築模型和設計圖。二樓還有一個美麗的室內花園——真的令人嘆為觀止。'},
+  {id:'V3000-A2-064',module:'V3000-A2',vocab:"background | identity | uniform | site | region",en:"I'm from a small town in the southern region, so moving to the city was a big change. My background is in engineering, but I've been working on a construction site for two years now. We all wear a uniform on site for safety and easy identity checks. It's hard work, but I love seeing a building come up from nothing!",zh:"我來自南部一個小鎮，所以搬到城市對我來說是很大的改變。我的背景是工程，但我在工地工作了兩年了。我們在工地上都要穿制服，為了安全和便於身份確認。工作很辛苦，但看著一棟建築從零蓋起來真的很有成就感！"},
+  {id:'V3000-A2-065',module:'V3000-A2',vocab:"enter | inform | react | reaction | launch",en:"We decided to enter a new market this quarter and launched our product officially last week. I had to inform all the existing clients about the change. Their reaction was mostly positive, which was a relief. Seeing how people react to something new you've built is always exciting!",zh:'我們這一季決定進軍一個新市場，上週正式發布了產品。我必須通知所有現有客戶這項變更。他們的反應大多是正面的，讓我鬆了口氣。看著人們對你親手打造的東西作出反應，總是讓人既興奮又緊張！'},
+  {id:'V3000-A2-066',module:'V3000-A2',vocab:"organize | organized | pack | cancel | govern",en:"I had a busy day — had to organize all the travel documents for the team trip. I'm always pretty organized, so it didn't take too long. Then we got news we had to cancel one booking because of a scheduling conflict. Now I need to pack my bags and prepare for an early flight. Busy but sorted!",zh:'我今天很忙——要整理所有出差的旅行文件。我一向都蠻有條理的，所以沒花太多時間。然後接到通知說要取消一個預訂，因為行程衝突。現在我還需要打包行李，明天一早要搭飛機。忙，但一切都搞定了！'},
+  {id:'V3000-A2-067',module:'V3000-A2',vocab:"argue | argument | beat | rise | perform",en:"There was a small argument in the office today about the project deadline. I tried to stay calm and not argue back. In the end, we found a compromise. Our team really performs well under pressure — and when sales rise next quarter, I think everyone will forget about today's disagreement!",zh:'辦公室今天為了專案截止日期發生了一個小爭執。我努力保持冷靜，沒有和對方爭論。最後我們找到了折衷方案。我們的團隊在壓力下真的表現得很好——等下一季業績上升了，我相信大家就會忘掉今天的不愉快！'},
+  {id:'V3000-A2-068',module:'V3000-A2',vocab:'simple | single | unusual | mild | informal',en:'We had a really nice team dinner last night. The restaurant had a simple but warm atmosphere — nothing fancy. It was an informal evening, so everyone was relaxed. The food was mild but flavourful. One unusual touch was the candles on the tables — a single candle on each one. It made the whole place feel really cosy.',zh:'我們昨晚有一場很棒的團隊聚餐。餐廳的氛圍簡單又溫馨——不花俏。是個輕鬆的非正式晚餐，大家都很放鬆。食物口味溫和但很有層次。比較獨特的是桌上的布置——每桌就放一根單一的蠟燭，讓整個空間感覺超有氛圍。'},
+  {id:'V3000-A2-069',module:'V3000-A2',vocab:"rough | surface | flat | broken | several",en:"I had a rough commute this morning — the surface of the road was terrible after last night's storm. Several traffic lights were broken too, which caused massive delays. The road leading to the office was completely flat but covered in puddles. Several colleagues were late as well, so at least I wasn't alone!",zh:'今天早上的通勤超糟糕——昨晚的暴風雨過後，路面狀況很差。幾個紅綠燈也壞了，造成大塞車。通往辦公室的那條路地面完全平坦，但整個積水了。幾個同事也遲到了，至少我不是孤單一個人！'},
+  {id:'V3000-A2-070',module:'V3000-A2',vocab:"differently | perhaps | alive | asleep | ancient",en:"Perhaps I should approach this differently — I've been stuck on the same problem all morning. It's important to keep ideas alive in a team, even when things get tough. I nearly fell asleep in the afternoon meeting — ancient history never keeps me awake! But seriously, a fresh perspective always helps.",zh:'也許我應該用不同的方式來處理這個問題——我整個早上都卡在同一個地方。在一個團隊裡，讓大家的想法保持活力很重要，就算遇到困難也是。我差點在下午的會議中睡著了——那些陳舊的觀念真的讓人昏昏欲睡！但說真的，換個新角度來看問題，真的很有幫助。'},
+];
+
+// ─────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────
+let allSentences = [...DEFAULT_SENTENCES];
+let filtered = [...allSentences];
+let currentIdx = 0;
+let isPlaying = false;
+let autoNext = false;
+let loopMode = false;
+let shadowMode = false;
+let shadowPauseSec = 4;
+let karaokeSpeedPct = parseInt(localStorage.getItem('karaokeSpeed') || '100');
+let countdownInterval = null;
+let showZh = false;
+let speed = 1.0;
+let masteredSet = new Set(JSON.parse(localStorage.getItem('lifeEnMastered') || '[]'));
+let audioSpeed = 1.0;
+
+// Recording
+let mediaRecorder = null;
+let recChunks = [];
+let recBlob = null;
+let recAudio = null;
+let isRecording = false;
+
+// Audio — 用同一個元素（iOS 解鎖後才能在計時器中重播）
+let audio = new Audio();
+let pauseTimer = null;
+
+// ── iOS Safari 音訊解鎖 ──
+// iOS 需要在第一次使用者觸碰時解鎖 AudioContext，否則所有音訊都無法播放
+const _isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+let _iosAudioUnlocked = false;
+function _unlockIOSAudio() {
+  if (_iosAudioUnlocked) return;
+  _iosAudioUnlocked = true;
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (AC) {
+      const ctx = new AC();
+      const buf = ctx.createBuffer(1, 1, 22050);
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.connect(ctx.destination);
+      src.start(0);
+      ctx.resume();
+    }
+    // 同時播一個無聲 audio 解鎖 <audio> 播放器
+    const sil = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=');
+    sil.play().catch(() => {});
+  } catch(e) {}
+}
+document.addEventListener('touchstart', _unlockIOSAudio, { once: true, passive: true });
+document.addEventListener('click',      _unlockIOSAudio, { once: true });
+
+// ─────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────
+function init() {
+  buildModuleBar();
+  filterByModule('ALL');
+  renderSentence();
+  updateProgress();
+}
+
+function buildModuleBar() {
+  const bar = document.getElementById('moduleBar');
+  bar.innerHTML = '<button class="mod-btn active" data-module="ALL">全部</button>';
+  const mods = [...new Set(allSentences.map(s => s.module))];
+  mods.forEach(m => {
+    const btn = document.createElement('button');
+    btn.className = 'mod-btn';
+    btn.dataset.module = m;
+    btn.textContent = m;
+    bar.appendChild(btn);
+  });
+  bar.querySelectorAll('.mod-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      bar.querySelectorAll('.mod-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      filterByModule(btn.dataset.module);
+    });
+  });
+}
+
+function filterByModule(mod) {
+  filtered = mod === 'ALL' ? [...allSentences] : allSentences.filter(s => s.module === mod);
+  currentIdx = 0;
+  stopPlayback();
+  renderSentence();
+  updateProgress();
+}
+
+// ─────────────────────────────────────────────
+// RENDER
+// ─────────────────────────────────────────────
+function renderSentence() {
+  if (!filtered.length) return;
+  const s = filtered[currentIdx];
+  const num = String(currentIdx + 1).padStart(2, '0');
+  const total = String(filtered.length).padStart(2, '0');
+
+  document.getElementById('sentenceNum').textContent = num;
+  document.getElementById('sentenceCounter').textContent = `${num} / ${total}`;
+
+  // Vocab chips
+  const vocabArea = document.getElementById('vocabArea');
+  if (s.vocab) {
+    vocabArea.innerHTML = s.vocab.split('|').map(w => `<span>${w.trim()}</span>`).join('');
+    vocabArea.style.display = '';
+  } else {
+    vocabArea.style.display = 'none';
+  }
+
+  document.getElementById('sentenceEn').innerHTML = buildSentenceHTML(s.en, s.vocab);
+
+  const zhEl = document.getElementById('sentenceZh');
+  zhEl.textContent = s.zh;
+  zhEl.className = 'sentence-zh' + (showZh ? ' show' : '');
+
+  // Mastered style
+  document.getElementById('sentenceCard').style.borderLeft =
+    masteredSet.has(s.id) ? '4px solid var(--yellow)' : '';
+
+  document.getElementById('masteredBtn').className =
+    'opt-btn mastered-btn' + (masteredSet.has(s.id) ? ' on' : '');
+  document.getElementById('masteredBtn').innerHTML =
+    masteredSet.has(s.id) ? '★ 已熟練' : '☆ 標記為<br>「已熟練」';
+
+  document.getElementById('speakHint').style.display = 'none';
+}
+
+function updateProgress() {
+  const done = filtered.filter(s => masteredSet.has(s.id)).length;
+  const total = filtered.length;
+  const pct = total ? (done / total * 100) : 0;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressText').textContent = `已完成 ${done} / ${total} 句`;
+}
+
+// ─────────────────────────────────────────────
+// SENTENCE HTML BUILDER（群組單字標黃 + 逐字 span）
+// ─────────────────────────────────────────────
+
+// 詞幹比對：handles plurals / verb forms / derivations
+function stemMatch(sentWord, vocabWord) {
+  if (sentWord === vocabWord) return true;
+  if (vocabWord.length < 3) return false;
+  // sentence word 以 vocab word 開頭（arrives→arrive, arrangements→arrangement）
+  if (sentWord.startsWith(vocabWord)) return true;
+  // vocab word 以 sentence word 開頭（exhaust→exhausted）
+  if (vocabWord.startsWith(sentWord) && sentWord.length >= 4) return true;
+  return false;
+}
+
+function buildSentenceHTML(text, vocabStr) {
+  // 解析 vocab，分成單字項和片語項
+  const vocabItems = (vocabStr || '').split('|')
+    .map(w => w.trim().toLowerCase()).filter(Boolean);
+  const vocabSingle = vocabItems.filter(v => !v.includes(' '));
+  const vocabPhrases = vocabItems.filter(v => v.includes(' '))
+    .map(p => p.split(/\s+/));
+
+  // 切 token（保留空白）
+  const tokens = [];
+  const re = /\S+|\s+/g;
+  let m;
+  while ((m = re.exec(text)) !== null)
+    tokens.push({ t: m[0], pos: m.index, sp: /^\s+$/.test(m[0]) });
+
+  const marked = new Array(tokens.length).fill(false);
+
+  // 單字比對（詞幹）
+  tokens.forEach((tok, i) => {
+    if (tok.sp) return;
+    const clean = tok.t.replace(/[^a-zA-Z'-]/gi, '').toLowerCase();
+    if (vocabSingle.some(v => stemMatch(clean, v))) marked[i] = true;
+  });
+
+  // 片語比對（連續單字）
+  const wordIdx = tokens.map((t, i) => t.sp ? null : i).filter(i => i !== null);
+  vocabPhrases.forEach(parts => {
+    for (let j = 0; j <= wordIdx.length - parts.length; j++) {
+      let ok = true;
+      for (let k = 0; k < parts.length; k++) {
+        const clean = tokens[wordIdx[j+k]].t.replace(/[^a-zA-Z'-]/gi,'').toLowerCase();
+        if (!stemMatch(clean, parts[k])) { ok = false; break; }
+      }
+      if (ok) parts.forEach((_, k) => { marked[wordIdx[j+k]] = true; });
+    }
+  });
+
+  return tokens.map((tok, i) => {
+    if (tok.sp) return tok.t;
+    const cls = marked[i] ? 'w vocab' : 'w';
+    return `<span class="${cls}" data-s="${tok.pos}">${tok.t}</span>`;
+  }).join('');
+}
+
+// 清除逐字高亮
+function clearSpeaking() {
+  document.querySelectorAll('#sentenceEn .w.speaking')
+    .forEach(el => el.classList.remove('speaking'));
+}
+
+// ── 計時器模擬卡拉OK（Chrome TTS 不支援 onboundary）──
+let karaokeTimer = null;
+let rafId = null;
+
+// 估算英文音節數（母音群組計）
+function countSyllables(word) {
+  const w = word.toLowerCase().replace(/[^a-z]/g, '');
+  if (!w) return 0;
+  return Math.max(1, (w.match(/[aeiouy]+/g) || []).length);
+}
+
+// 按音節估算每字停留時間（TTS 是按音節速度念，不是按字母數）
+function _dbg(msg) {
+  const el = document.getElementById('kDebug');
+  if (el) el.textContent = msg;
+}
+function startKaraokeTimer(spans, speechRate) {
+  _dbg('⏱ karaoke timer 啟動，共 ' + spans.length + ' 字');
+  if (karaokeTimer) clearTimeout(karaokeTimer);
+  // karaokeSpeedPct：100=正常；120=慢20%；80=快20%
+  const rate = (speechRate || 1) * (karaokeSpeedPct / 100);
+  // 每字固定基礎 292ms；每多 1 個音節加 50ms（可用滑桿調整）
+  const baseMs = 292 / rate;
+  const sylMs  = 50  / rate;
+  let idx = 0;
+  const advance = () => {
+    if (idx >= spans.length) { karaokeTimer = null; return; } // 先判斷再 clear，最後一字保持高亮
+    clearSpeaking();
+    spans[idx].classList.add('speaking');
+    const syls = countSyllables(spans[idx].textContent);
+    const hasSentEnd = /[.!?]/.test(spans[idx].textContent);
+    const hasClause  = /[,;:]/.test(spans[idx].textContent);
+    const ms = baseMs
+             + Math.max(0, syls - 1) * sylMs  // 第 2+ 音節每個加 50ms
+             + (hasSentEnd ? 80 : 0)
+             + (hasClause  ? 30 : 0);
+    idx++;
+    karaokeTimer = setTimeout(advance, ms);
+  };
+  karaokeTimer = setTimeout(advance, 60);
+}
+
+// mp3 用 rAF 依播放進度高亮
+function startKaraokeByTime() {
+  const spans = Array.from(document.querySelectorAll('#sentenceEn .w'));
+  _dbg('🎵 karaoke RAF 啟動，共 ' + spans.length + ' 字');
+  if (!spans.length) return;
+  if (rafId) cancelAnimationFrame(rafId);
+  const tick = () => {
+    if (!isPlaying) return;
+    const dur = (audio && audio.duration > 0 && isFinite(audio.duration)) ? audio.duration : 0;
+    const cur = (audio && audio.currentTime) ? audio.currentTime : 0;
+    const prog = dur > 0 ? cur / dur : 0;
+    const idx  = Math.min(Math.floor(prog * spans.length), spans.length - 1);
+    clearSpeaking();
+    spans[idx].classList.add('speaking');
+    rafId = requestAnimationFrame(tick);
+  };
+  rafId = requestAnimationFrame(tick);
+}
+
+function stopKaraoke() {
+  if (rafId)        { cancelAnimationFrame(rafId); rafId = null; }
+  if (karaokeTimer) { clearTimeout(karaokeTimer); karaokeTimer = null; }
+  clearSpeaking();
+}
+
+// ─────────────────────────────────────────────
+// PLAYBACK
+// ─────────────────────────────────────────────
+function playCurrentSentence() {
+  if (!filtered.length) return;
+  stopPlayback();
+  isPlaying = true;
+  document.getElementById('playBtn').textContent = '⏸';
+  document.getElementById('speakHint').style.display = 'block';
+
+  const s = filtered[currentIdx];
+
+  // 所有平台統一：直接播 MP3，失敗才 TTS
+  // 重用同一個 audio 元素（iOS 解鎖後才能在計時器中重播）
+  const audioFile = `${s.id}.mp3`;
+  audio.src = audioFile;
+  audio.load();
+  // 設在 load() 之後，否則 load() 會把 playbackRate 重置為 1.0
+  audio.playbackRate = speed;
+
+  // Guard: prevent onerror + play().catch() both calling TTS
+  let fallbackCalled = false;
+  const fallbackTTS = () => {
+    if (fallbackCalled) return;
+    fallbackCalled = true;
+    useBrowserTTS(s.en);
+  };
+
+  audio.onerror = fallbackTTS;
+  audio.onended = () => { stopKaraoke(); onAudioEnded(); };
+  audio.oncanplay = () => { audio.playbackRate = speed; };
+  audio.onplay  = () => {
+    audio.playbackRate = speed;
+    const _s = Array.from(document.querySelectorAll('#sentenceEn .w'));
+    if (_s.length) startKaraokeTimer(_s, speed);
+  };
+  audio.play().catch(fallbackTTS);
+
+  // 100ms 後若 karaoke 還沒啟動，強制啟動
+  setTimeout(() => {
+    if (isPlaying && !karaokeTimer) {
+      const _spans = Array.from(document.querySelectorAll('#sentenceEn .w'));
+      if (_spans.length) { _dbg('▶ fallback 啟動'); startKaraokeTimer(_spans, speed); }
+    }
+  }, 100);
+}
+
+function useBrowserTTS(text) {
+  if (!('speechSynthesis' in window)) { onAudioEnded(); return; }
+  window.speechSynthesis.cancel();
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.lang = 'en-US';
+  utt.rate = speed;
+
+  let usingBoundary = false; // 一旦 boundary 開始觸發就切換模式
+
+  // onstart：先啟動計時器（Chrome 用）
+  // iOS onstart 不穩定 → 200ms 後自動補發
+  let ttsKaraokeStarted = false;
+  const ttsKaraokeFallback = setTimeout(() => {
+    if (!ttsKaraokeStarted) {
+      ttsKaraokeStarted = true;
+      const spans = Array.from(document.querySelectorAll('#sentenceEn .w'));
+      startKaraokeTimer(spans, speed);
+    }
+  }, 200);
+  utt.onstart = () => {
+    clearTimeout(ttsKaraokeFallback);
+    if (ttsKaraokeStarted) return;
+    ttsKaraokeStarted = true;
+    usingBoundary = false;
+    const spans = Array.from(document.querySelectorAll('#sentenceEn .w'));
+    startKaraokeTimer(spans, speed);
+  };
+
+  // boundary event（Firefox/Edge 支援）：第一次觸發就取消計時器，改用 boundary
+  utt.onboundary = (e) => {
+    if (e.name !== 'word') return;
+    if (!usingBoundary) {
+      usingBoundary = true;
+      if (karaokeTimer) { clearTimeout(karaokeTimer); karaokeTimer = null; }
+    }
+    clearSpeaking();
+    const spans = document.querySelectorAll('#sentenceEn .w');
+    let best = null, bestDiff = Infinity;
+    spans.forEach(sp => {
+      const diff = Math.abs(parseInt(sp.dataset.s, 10) - e.charIndex);
+      if (diff < bestDiff) { bestDiff = diff; best = sp; }
+    });
+    if (best && bestDiff < 30) best.classList.add('speaking');
+  };
+
+  utt.onend = () => { stopKaraoke(); onAudioEnded(); };
+  window.speechSynthesis.speak(utt);
+}
+
+function onAudioEnded() {
+  document.getElementById('speakHint').style.display = 'none';
+  isPlaying = false;
+  document.getElementById('playBtn').textContent = '▶';
+
+  if (shadowMode) {
+    startShadowCountdown();
+  } else if (loopMode) {
+    setTimeout(() => { isPlaying = true; playCurrentSentence(); }, 600);
+  } else if (autoNext) {
+    setTimeout(() => goNext(true), 800);
+  }
+  // else: just stop — user clicked pause or ended naturally
+}
+
+function startShadowCountdown() {
+  clearTimeout(pauseTimer);
+  clearInterval(countdownInterval);
+
+  const strip  = document.getElementById('shadowCountdown');
+  const numEl  = document.getElementById('countdownNum');
+  const fillEl = document.getElementById('cdFill');
+
+  let remaining = shadowPauseSec;
+  numEl.textContent = remaining;
+  fillEl.style.transition = 'none';
+  fillEl.style.width = '100%';
+  strip.classList.add('active');
+
+  // trigger transition on next frame
+  requestAnimationFrame(() => {
+    fillEl.style.transition = `width ${shadowPauseSec}s linear`;
+    fillEl.style.width = '0%';
+  });
+
+  countdownInterval = setInterval(() => {
+    remaining--;
+    numEl.textContent = remaining;
+    if (remaining <= 0) {
+      clearInterval(countdownInterval);
+      hideShadowCountdown();
+      afterShadowPause();
+    }
+  }, 1000);
+}
+
+function hideShadowCountdown() {
+  document.getElementById('shadowCountdown').classList.remove('active');
+  clearInterval(countdownInterval);
+  clearTimeout(pauseTimer);
+}
+
+function afterShadowPause() {
+  // 跟讀模式結束後：autoNext → 下一句；否則一律重播同句（單句循環效果）
+  if (autoNext) {
+    goNext(true);
+  } else {
+    playCurrentSentence();
+  }
+}
+
+function stopPlayback() {
+  try { audio.pause(); audio.currentTime = 0; } catch(e){}
+  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+  stopKaraoke();
+  hideShadowCountdown();
+  isPlaying = false;
+  document.getElementById('playBtn').textContent = '▶';
+  document.getElementById('speakHint').style.display = 'none';
+}
+
+function goNext(auto) {
+  if (currentIdx < filtered.length - 1) {
+    currentIdx++;
+    renderSentence();
+    if (auto || isPlaying) playCurrentSentence();
+  } else {
+    stopPlayback();
+  }
+}
+
+function goPrev() {
+  if (currentIdx > 0) {
+    currentIdx--;
+    renderSentence();
+    if (isPlaying) playCurrentSentence();
+  }
+}
+
+// ─────────────────────────────────────────────
+// EVENTS
+// ─────────────────────────────────────────────
+document.getElementById('playBtn').addEventListener('click', () => {
+  if (isPlaying) stopPlayback(); else playCurrentSentence();
+});
+document.getElementById('nextBtn').addEventListener('click', () => goNext(false));
+document.getElementById('prevBtn').addEventListener('click', goPrev);
+
+function jumpToSentence() {
+  var val = parseInt(document.getElementById('jumpInput').value);
+  if (isNaN(val)) return;
+  var idx = Math.max(0, Math.min(val - 1, filtered.length - 1));
+  currentIdx = idx;
+  stopPlayback();
+  renderSentence();
+  playCurrentSentence();
+}
+document.getElementById('jumpGoBtn').addEventListener('click', jumpToSentence);
+document.getElementById('jumpInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') jumpToSentence();
+});
+document.getElementById('replayBtn').addEventListener('click', () => {
+  stopPlayback();
+  playCurrentSentence();
+});
+
+document.getElementById('toggleZhBtn').addEventListener('click', () => {
+  showZh = !showZh;
+  document.getElementById('toggleZhBtn').textContent = showZh ? '👁‍🗨' : '👁';
+  document.getElementById('sentenceZh').className = 'sentence-zh' + (showZh ? ' show' : '');
+});
+
+document.querySelectorAll('.speed-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    speed = parseFloat(btn.dataset.speed);
+    if (audio) audio.playbackRate = speed;
+  });
+});
+
+document.getElementById('autoNextBtn').addEventListener('click', () => {
+  autoNext = !autoNext;
+  if (autoNext) { loopMode = false; document.getElementById('loopBtn').classList.remove('on'); }
+  document.getElementById('autoNextBtn').classList.toggle('on', autoNext);
+});
+document.getElementById('loopBtn').addEventListener('click', () => {
+  loopMode = !loopMode;
+  if (loopMode) { autoNext = false; document.getElementById('autoNextBtn').classList.remove('on'); }
+  document.getElementById('loopBtn').classList.toggle('on', loopMode);
+});
+document.getElementById('shadowModeBtn').addEventListener('click', () => {
+  shadowMode = !shadowMode;
+  document.getElementById('shadowModeBtn').classList.toggle('on', shadowMode);
+  document.getElementById('pausePanel').classList.toggle('show', shadowMode);
+});
+
+// Pause slider
+document.getElementById('pauseSlider').addEventListener('input', e => {
+  shadowPauseSec = parseInt(e.target.value);
+  document.getElementById('pauseVal').textContent = shadowPauseSec;
+});
+
+// Karaoke speed slider（Chrome 卡拉OK高亮速度調整）
+const karaokeSlider = document.getElementById('karaokeSlider');
+karaokeSlider.value = karaokeSpeedPct;
+document.getElementById('karaokeVal').textContent = karaokeSpeedPct;
+karaokeSlider.addEventListener('input', e => {
+  karaokeSpeedPct = parseInt(e.target.value);
+  document.getElementById('karaokeVal').textContent = karaokeSpeedPct;
+  localStorage.setItem('karaokeSpeed', karaokeSpeedPct);
+});
+
+// Skip countdown button
+document.getElementById('countdownSkip').addEventListener('click', () => {
+  hideShadowCountdown();
+  afterShadowPause();
+});
+document.getElementById('masteredBtn').addEventListener('click', () => {
+  const s = filtered[currentIdx];
+  if (masteredSet.has(s.id)) masteredSet.delete(s.id);
+  else masteredSet.add(s.id);
+  localStorage.setItem('lifeEnMastered', JSON.stringify([...masteredSet]));
+  renderSentence();
+  updateProgress();
+});
+
+// ─────────────────────────────────────────────
+// RECORDING
+// ─────────────────────────────────────────────
+document.getElementById('recBtn').addEventListener('click', async () => {
+  if (isRecording) {
+    mediaRecorder.stop();
+    isRecording = false;
+    document.getElementById('recBtn').textContent = '● 開始錄音';
+    document.getElementById('recBtn').classList.remove('recording');
+  } else {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      recChunks = [];
+      // iOS Safari 只支援 audio/mp4；其他瀏覽器用 audio/webm
+      const mimeType = MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4'
+                     : MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm'
+                     : '';
+      mediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+      mediaRecorder.ondataavailable = e => recChunks.push(e.data);
+      mediaRecorder.onstop = () => {
+        const blobType = mimeType || 'audio/mp4';
+        recBlob = new Blob(recChunks, { type: blobType });
+        stream.getTracks().forEach(t => t.stop());
+      };
+      mediaRecorder.start();
+      isRecording = true;
+      document.getElementById('recBtn').textContent = '⏹ 停止錄音';
+      document.getElementById('recBtn').classList.add('recording');
+    } catch(e) {
+      alert('請允許麥克風存取權限');
+    }
+  }
+});
+
+document.getElementById('recPlayBtn').addEventListener('click', () => {
+  if (!recBlob) { alert('請先錄音'); return; }
+  if (recAudio) { recAudio.pause(); recAudio = null; }
+  recAudio = new Audio(URL.createObjectURL(recBlob));
+  recAudio.play();
+});
+
+// ─────────────────────────────────────────────
+// EXCEL UPLOAD
+// ─────────────────────────────────────────────
+document.getElementById('uploadBtn').addEventListener('click', () => {
+  document.getElementById('uploadModal').classList.add('open');
+});
+document.getElementById('modalCancel').addEventListener('click', () => {
+  document.getElementById('uploadModal').classList.remove('open');
+});
+document.getElementById('uploadModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('uploadModal'))
+    document.getElementById('uploadModal').classList.remove('open');
+});
+
+document.getElementById('fileInput').addEventListener('change', async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const buf = await file.arrayBuffer();
+  const wb = XLSX.read(buf, { type: 'array' });
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+  const newSentences = [];
+  for (let i = 1; i < rows.length; i++) {
+    const [audioFile, mod, vocab, en, zh] = rows[i];
+    if (!en) continue;
+    newSentences.push({
+      id: audioFile || `upload-${i}`,
+      module: mod || 'Upload',
+      vocab: vocab || '',
+      en: String(en),
+      zh: String(zh || '')
+    });
+  }
+
+  if (!newSentences.length) { alert('讀不到資料，請確認欄位格式'); return; }
+  allSentences = [...DEFAULT_SENTENCES, ...newSentences];
+  buildModuleBar();
+  filterByModule('ALL');
+  document.getElementById('uploadModal').classList.remove('open');
+  e.target.value = '';
+  alert(`✅ 成功載入 ${newSentences.length} 個句子！`);
+});
+
+// ─────────────────────────────────────────────
+// MEDIA SESSION API（鎖定螢幕仍可播放 & 通知列控制）
+// ─────────────────────────────────────────────
+function updateMediaSession() {
+  if (!('mediaSession' in navigator)) return;
+  const s = filtered[currentIdx];
+  if (!s) return;
+  navigator.mediaSession.metadata = new MediaMetadata({
+    title: s.en.substring(0, 60),
+    artist: s.module,
+    album: '🌍 Life EN 生活英文跟讀',
+  });
+  navigator.mediaSession.setActionHandler('previoustrack', () => goPrev());
+  navigator.mediaSession.setActionHandler('nexttrack',     () => goNext(false));
+  navigator.mediaSession.setActionHandler('play',  () => { if (!isPlaying) playCurrentSentence(); });
+  navigator.mediaSession.setActionHandler('pause', () => stopPlayback());
+}
+init();
+</script>
+</body>
+</html>
