@@ -134,8 +134,9 @@
   .progress-bar  { height: 3px; background: var(--border); }
   .progress-fill { height: 100%; background: var(--accent); transition: width .3s; }
   .progress-text { text-align: center; font-size: 11px; color: var(--muted); padding: 4px 0; }
-  .module-bar    { padding: 8px 12px; display: flex; gap: 8px; overflow-x: auto; }
+  .module-bar    { padding: 8px 12px; display: flex; gap: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch; scroll-snap-type: x mandatory; }
   .module-bar::-webkit-scrollbar { display: none; }
+  .mod-btn { scroll-snap-align: start; }
   .mod-btn { flex-shrink: 0; padding: 5px 14px; border-radius: 20px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-size: 13px; cursor: pointer; transition: all .15s; }
   .mod-btn.active { background: var(--accent); color: #0f172a; border-color: var(--accent); font-weight: 700; }
 
@@ -174,6 +175,7 @@
   .modal-desc  { font-size: 12px; color: var(--muted); margin-bottom: 14px; line-height: 1.6; }
   .modal-btn   { display: block; width: 100%; padding: 12px; border-radius: 10px; border: 1px dashed var(--accent); background: rgba(56,189,248,.07); color: var(--accent); font-size: 14px; cursor: pointer; margin-bottom: 10px; }
   .modal-cancel { display: block; width: 100%; padding: 11px; border-radius: 10px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-size: 13px; cursor: pointer; }
+  .modal-clear { display: block; width: 100%; padding: 11px; border-radius: 10px; border: 1px solid #ef4444; background: transparent; color: #ef4444; font-size: 13px; cursor: pointer; margin-bottom: 8px; }
   #fileInput { display: none; }
 </style>
 </head>
@@ -297,6 +299,7 @@
     </div>
     <label class="modal-btn" for="fileInput">選擇 Excel 檔案</label>
     <input type="file" id="fileInput" accept=".xlsx,.xls">
+    <button class="modal-clear" id="clearDataBtn">🗑 清除已上傳資料</button>
     <button class="modal-cancel" id="modalCancel">取消</button>
   </div>
 </div>
@@ -432,13 +435,31 @@ function _unlockIOSAudio() {
     sil.play().catch(() => {});
   } catch(e) {}
 }
-document.addEventListener('touchstart', _unlockIOSAudio, { once: true, passive: true });
-document.addEventListener('click',      _unlockIOSAudio, { once: true });
+function _unlockIOSTTS() {
+  try {
+    const u = new SpeechSynthesisUtterance('');
+    u.volume = 0;
+    window.speechSynthesis.speak(u);
+    setTimeout(() => window.speechSynthesis.cancel(), 100);
+  } catch(e) {}
+}
+document.addEventListener('touchstart', () => { _unlockIOSAudio(); _unlockIOSTTS(); }, { once: true, passive: true });
+document.addEventListener('click',      () => { _unlockIOSAudio(); _unlockIOSTTS(); }, { once: true });
 
 // ─────────────────────────────────────────────
 // INIT
 // ─────────────────────────────────────────────
 function init() {
+  // 從 localStorage 還原上傳的句子
+  try {
+    const saved = localStorage.getItem('lifeEnSentences');
+    if (saved) {
+      const savedSentences = JSON.parse(saved);
+      if (savedSentences && savedSentences.length) {
+        allSentences = [...DEFAULT_SENTENCES, ...savedSentences];
+      }
+    }
+  } catch(e) {}
   buildModuleBar();
   filterByModule('ALL');
   renderSentence();
@@ -975,6 +996,15 @@ document.getElementById('uploadBtn').addEventListener('click', () => {
 document.getElementById('modalCancel').addEventListener('click', () => {
   document.getElementById('uploadModal').classList.remove('open');
 });
+document.getElementById('clearDataBtn').addEventListener('click', () => {
+  if (!confirm('確定要清除已上傳的 Excel 資料嗎？\n（預設的 A2 句子不會被刪除）')) return;
+  localStorage.removeItem('lifeEnSentences');
+  allSentences = [...DEFAULT_SENTENCES];
+  buildModuleBar();
+  filterByModule('ALL');
+  document.getElementById('uploadModal').classList.remove('open');
+  alert('✅ 已清除上傳資料，恢復為預設句庫。');
+});
 document.getElementById('uploadModal').addEventListener('click', e => {
   if (e.target === document.getElementById('uploadModal'))
     document.getElementById('uploadModal').classList.remove('open');
@@ -1003,11 +1033,13 @@ document.getElementById('fileInput').addEventListener('change', async e => {
 
   if (!newSentences.length) { alert('讀不到資料，請確認欄位格式'); return; }
   allSentences = [...DEFAULT_SENTENCES, ...newSentences];
+  // 儲存到 localStorage，下次開啟自動還原
+  try { localStorage.setItem('lifeEnSentences', JSON.stringify(newSentences)); } catch(e) {}
   buildModuleBar();
   filterByModule('ALL');
   document.getElementById('uploadModal').classList.remove('open');
   e.target.value = '';
-  alert(`✅ 成功載入 ${newSentences.length} 個句子！`);
+  alert(`✅ 成功載入 ${newSentences.length} 個句子！關閉後再打開也會自動保留喔！`);
 });
 
 // ─────────────────────────────────────────────
