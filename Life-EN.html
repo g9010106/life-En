@@ -137,8 +137,10 @@
   .module-bar    { padding: 8px 12px; display: flex; gap: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch; scroll-snap-type: x mandatory; }
   .module-bar::-webkit-scrollbar { display: none; }
   .mod-btn { scroll-snap-align: start; }
-  .mod-btn { flex-shrink: 0; padding: 5px 14px; border-radius: 20px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-size: 13px; cursor: pointer; transition: all .15s; }
+  .mod-btn { flex-shrink: 0; padding: 10px 20px; min-height: 48px; border-radius: 24px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-size: 15px; cursor: pointer; transition: all .15s; white-space: nowrap; display: flex; align-items: center; }
   .mod-btn.active { background: var(--accent); color: #0f172a; border-color: var(--accent); font-weight: 700; }
+  .mod-nav-btn { flex-shrink: 0; background: var(--card2); border: none; border-right: 1px solid var(--border); color: var(--text); font-size: 18px; width: 44px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .mod-nav-btn.right { border-right: none; border-left: 1px solid var(--border); }
 
   /* ── Landscape responsive ── */
   @media (orientation: landscape) and (max-height: 500px) {
@@ -283,8 +285,12 @@
 <div class="bottom-bar">
   <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
   <div class="progress-text" id="progressText">已完成 0 / 0 句</div>
-  <div class="module-bar" id="moduleBar">
-    <button class="mod-btn active" data-module="ALL">全部</button>
+  <div style="display:flex;align-items:stretch;">
+    <button class="mod-nav-btn" id="modLeft">&#9664;</button>
+    <div class="module-bar" id="moduleBar">
+      <button class="mod-btn active" data-module="ALL">全部</button>
+    </div>
+    <button class="mod-nav-btn right" id="modRight">&#9654;</button>
   </div>
 </div>
 
@@ -1059,6 +1065,12 @@ function updateMediaSession() {
   navigator.mediaSession.setActionHandler('play',  () => { if (!isPlaying) playCurrentSentence(); });
   navigator.mediaSession.setActionHandler('pause', () => stopPlayback());
 }
+document.getElementById('modLeft').addEventListener('click', () => {
+  document.getElementById('moduleBar').scrollBy({ left: -180, behavior: 'smooth' });
+});
+document.getElementById('modRight').addEventListener('click', () => {
+  document.getElementById('moduleBar').scrollBy({ left: 180, behavior: 'smooth' });
+});
 init();
 </script>
 </body>
